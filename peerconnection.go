@@ -21,6 +21,7 @@ import (
 
 	"github.com/pion/ice/v2"
 	"github.com/pion/interceptor"
+	"github.com/pion/interceptor/pkg/jitterbuffer"
 	"github.com/pion/logging"
 	"github.com/pion/rtcp"
 	"github.com/pion/sdp/v3"
@@ -1237,19 +1238,26 @@ func (pc *PeerConnection) startReceiver(incoming trackDetails, receiver *RTPRece
 		}
 
 		go func(track *TrackRemote) {
-			b := make([]byte, pc.api.settingEngine.getReceiveMTU())
-			n, _, err := track.peek(b)
-			if err != nil {
-				pc.log.Warnf("Could not determine PayloadType for SSRC %d (%s)", track.SSRC(), err)
+			for {
+				b := make([]byte, pc.api.settingEngine.getReceiveMTU())
+				n, _, err := track.peek(b)
+				if errors.Is(err, jitterbuffer.ErrPopWhileBuffering) {
+					time.Sleep(10 * time.Millisecond)
+					continue
+				}
+				if err != nil {
+					pc.log.Warnf("Could not determine PayloadType for SSRC %d (%s)", track.SSRC(), err)
+					return
+				}
+
+				if err = track.checkAndUpdateTrack(b[:n]); err != nil {
+					pc.log.Warnf("Failed to set codec settings for track SSRC %d (%s)", track.SSRC(), err)
+					return
+				}
+
+				pc.onTrack(track, receiver)
 				return
 			}
-
-			if err = track.checkAndUpdateTrack(b[:n]); err != nil {
-				pc.log.Warnf("Failed to set codec settings for track SSRC %d (%s)", track.SSRC(), err)
-				return
-			}
-
-			pc.onTrack(track, receiver)
 		}(t)
 	}
 }

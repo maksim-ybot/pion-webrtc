@@ -9,8 +9,8 @@ require (
 	github.com/pion/interceptor v0.1.25
 	github.com/pion/logging v0.2.2
 	github.com/pion/randutil v0.1.0
-	github.com/pion/rtcp v1.2.12
-	github.com/pion/rtp v1.8.5
+	github.com/pion/rtcp v1.2.14
+	github.com/pion/rtp v1.8.6
 	github.com/pion/sctp v1.8.16
 	github.com/pion/sdp/v3 v3.0.9
 	github.com/pion/srtp/v2 v2.0.18
@@ -37,3 +37,5 @@ require (
 // SCTP ZeroChecksum implementation has a interoperability bug
 // 3.2.28 can only work against itself, not other versions of webrtc
 retract v3.2.28
+
+replace github.com/pion/interceptor v0.1.25 => github.com/pion/interceptor v0.1.30-0.20240607185206-f42ed2b96855
